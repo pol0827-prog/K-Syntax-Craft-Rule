@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 문장·어문 규정 마스터 챌린지 전용 프로젝트 k-syntax-craft-rule (2026-10-18)
+    // 선생님 구글 계정 (프로그램 설정의 teacherEmail과 같아야 함)
+    function teacher() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == "pol0827@goedu.kr";
+    }
+    // 학생 각자의 기록: 로그인한 본인만 읽고 쓰기 (sar_profile, sar_progress)
+    match /data/users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    // 순위표: 로그인한 사람은 보기, 자기 점수만 올리기, 비우기는 선생님만
+    match /sar_scores/{uid} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.best is number
+        && request.resource.data.name is string
+        && request.resource.data.name.size() < 40;
+      allow delete: if teacher();
+    }
+    // 학생 요약: 본인만 쓰기, 선생님만 읽기
+    match /sar_board/{uid} {
+      allow read, delete: if teacher();
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+    // 선생님이 고친 문제: 로그인한 사람은 모두 읽기, 쓰기·지우기는 선생님만
+    match /sar_fixes/{id} {
+      allow read: if request.auth != null;
+      allow create, update: if teacher()
+        && request.resource.data.key is string
+        && request.resource.data.key.size() < 400;
+      allow delete: if teacher();
+    }
+    // 그 밖의 경로는 모두 막음
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

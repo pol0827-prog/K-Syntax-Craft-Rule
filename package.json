@@ -1,0 +1,7 @@
+{
+  "name": "jaeimina-sentence-norms-master",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "재이미나는 문장·어문 규정 마스터 챌린지 (파이어베이스 + 버셀 + 제미나이)"
+}
